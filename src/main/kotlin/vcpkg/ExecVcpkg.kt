@@ -1,12 +1,12 @@
 package vcpkg
 
-import model.Message
 import model.VcPackage
 import model.parsePackage
+import util.ExecutionResult
 import util.runCommand
 import java.io.File
 
-class ExecVcpkg(private val vcpkgRoot: File, private val log: (Message) -> Unit) : Vcpkg {
+class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
     private val executable =
         System.getProperty("os.name").toLowerCase().let {
             when {
@@ -19,41 +19,82 @@ class ExecVcpkg(private val vcpkgRoot: File, private val log: (Message) -> Unit)
                 it.contains("mac") -> {
                     "./vcpkg"
                 }
-                else -> throw VcpkgException("Unsupported OS")
+                else -> throw Exception("Unsupported OS")
             }
         }
 
-    private fun execProc(execLine: String): String {
-        log(Message("Executing: '$execLine'"))
-        return execLine.runCommand(vcpkgRoot)
-            ?: throw VcpkgException("Error in executing '$execLine'")
+
+    private fun execProc(execLine: String): Pair<Int, String> {
+        val result = execLine.runCommand(vcpkgRoot)
+
+        if (result.first != 0) {
+            throw VcpkgException(
+                "Vcpkg exited with non-zero code: ${result.first}",
+                result.second
+            )
+        }
+
+        return result
     }
 
-    override fun list(): List<VcPackage> {
+    override fun list(): ExecutionResult<List<VcPackage>> {
         val result = execProc("$executable list")
-        if (result.startsWith("No packages")) return arrayListOf()
-        val list = result.split(System.lineSeparator())
-        return list.subList(0, list.size - 1).map {
-            parsePackage(it)
-        }
+        val stream = result.second
+
+        if (stream.startsWith("No packages"))
+            return ExecutionResult(
+                result.first,
+                result.second,
+                arrayListOf()
+            )
+
+        val list = stream.split(System.lineSeparator())
+
+        return ExecutionResult(
+            result.first,
+            result.second,
+            list.subList(0, list.size - 1).map {
+                parsePackage(it)
+            }
+        )
     }
 
-    override fun search(name: String): List<VcPackage> {
-        if (name.isEmpty()) return arrayListOf()
+    override fun search(name: String): ExecutionResult<List<VcPackage>> {
+        if (name.isEmpty())
+            return ExecutionResult(
+                0, "", arrayListOf()
+            )
+
         val result = execProc("$executable search $name")
-        val list = result.split(System.lineSeparator())
-        return list.subList(0, list.size - 4).map {
-            parsePackage(it)
-        }
+        val stream = result.second
+        val list = stream.split(System.lineSeparator())
+
+        return ExecutionResult(
+            result.first,
+            result.second,
+            list.subList(0, list.size - 4).map {
+                parsePackage(it)
+            }
+        )
     }
 
-    override fun install(pkg: VcPackage) {
+    override fun install(pkg: VcPackage) : ExecutionResult<Unit> {
         val result = execProc("$executable install ${pkg.name}")
-        log(Message(result))
+
+        return ExecutionResult(
+            result.first,
+            result.second,
+            Unit
+        )
     }
 
-    override fun remove(pkg: VcPackage) {
+    override fun remove(pkg: VcPackage) : ExecutionResult<Unit> {
         val result = execProc("$executable remove ${pkg.name} --recurse")
-        log(Message(result))
+
+        return ExecutionResult(
+            result.first,
+            result.second,
+            Unit
+        )
     }
 }

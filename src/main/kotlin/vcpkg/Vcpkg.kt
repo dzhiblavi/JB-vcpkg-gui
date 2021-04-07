@@ -1,12 +1,16 @@
 package vcpkg
 
 import model.VcPackage
+import util.ExecutionResult
 
-class VcpkgException(message: String) : Exception(message)
+class VcpkgException(
+    message: String,
+    val stream: String
+) : Exception(message)
 
 interface Vcpkg {
-    fun list() : List<VcPackage>
-    fun search(name: String) : List<VcPackage>
-    fun install(pkg: VcPackage)
-    fun remove(pkg: VcPackage)
+    fun list() : ExecutionResult<List<VcPackage>>
+    fun search(name: String) : ExecutionResult<List<VcPackage>>
+    fun install(pkg: VcPackage) : ExecutionResult<Unit>
+    fun remove(pkg: VcPackage) : ExecutionResult<Unit>
 }

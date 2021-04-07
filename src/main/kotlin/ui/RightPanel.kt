@@ -19,18 +19,19 @@ import util.Config
 
 @Composable
 fun displayPackage(pkg: VcPackage, model: VcpkgModel) {
-    var color by remember { mutableStateOf(Config.COLORS.primary) }
-
     ListItem(
         modifier = Modifier
             .padding(Config.DEFAULT_PADDING)
-            .background(color = color)
+            .background(color = (
+                    if (pkg in model.selectedPackages)
+                        Config.COLORS.primary
+                    else
+                        Config.COLORS.secondary
+                    ))
             .clickable {
             if (pkg in model.selectedPackages) {
-                color = Config.COLORS.primary
                 model.selectedPackages.remove(pkg)
             } else {
-                color = Config.COLORS.secondary
                 model.selectedPackages.add(pkg)
             }
         }) {

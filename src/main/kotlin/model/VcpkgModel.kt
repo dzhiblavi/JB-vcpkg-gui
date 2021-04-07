@@ -2,6 +2,7 @@ package model
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import util.Log
 import vcpkg.ExecVcpkg
 import vcpkg.VcpkgException
 import java.io.File
@@ -10,24 +11,26 @@ import java.util.concurrent.Executors
 
 class VcpkgModel(vcpkgRoot: File) {
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
-    private val api = ExecVcpkg(vcpkgRoot, this::log)
-    val log = mutableStateListOf<Message>()
+    private val log = Log { logContent.add(it) }
+    private val api = ExecVcpkg(vcpkgRoot)
+    private var cancellation : () -> Unit = {}
+
+    val logContent = mutableStateListOf<Message>()
     val installedPackages = mutableStateListOf<VcPackage>()
     val selectedPackages = mutableStateListOf<VcPackage>()
     val searchedPackages = mutableStateListOf<VcPackage>()
+    val fullLog = mutableStateOf(false)
     var isRunning = mutableStateOf(false)
-    private var cancellation : () -> Unit = {}
-
-    private fun log(message: Message) {
-        log.add(message)
-    }
 
     private fun <T> safe(def: T, f: () -> T) : T {
         try {
             return f()
         } catch (e: VcpkgException) {
-            log(Message(e.message ?: "Unknown error"))
+            log.logError(e.message ?: "Unknown error")
+            log.logError("Output:")
+            log.logSecondary(e.stream)
         }
+
         return def
     }
 
@@ -43,7 +46,7 @@ class VcpkgModel(vcpkgRoot: File) {
         cancellation = {
             if (!future.isDone)
                 if (future.cancel(true))
-                    log(Message("Cancelled"))
+                    log.logPrimary("Cancelled")
             isRunning.value = false
         }
     }
@@ -56,8 +59,16 @@ class VcpkgModel(vcpkgRoot: File) {
                 if (it !in installedPackages) true
                 else {
                     safe(true) {
-                        api.remove(it)
+                        log.logPrimary("Removing '${it.name}'...")
+
+                        val result = api.remove(it)
                         installedPackages.remove(it)
+
+                        log.logPrimary("Successfully removed '${it.name}'!")
+                        if (fullLog.value) {
+                            log.logPrimary("Output:")
+                            log.logSecondary(result.stream)
+                        }
                         false
                     }
                 }
@@ -71,7 +82,16 @@ class VcpkgModel(vcpkgRoot: File) {
             searchedPackages.clear()
 
             safe(Unit) {
-                searchedPackages.addAll(api.search(name))
+                log.logPrimary("Searching for '$name'...")
+
+                val result = api.search(name)
+                searchedPackages.addAll(result.result)
+
+                log.logPrimary("Search for '$name' finished")
+                if (fullLog.value) {
+                    log.logPrimary("Output:")
+                    log.logSecondary(result.stream)
+                }
             }
         }
     }
@@ -81,8 +101,16 @@ class VcpkgModel(vcpkgRoot: File) {
             selectedPackages.forEach {
                 if (it !in installedPackages) {
                     safe(Unit) {
-                        api.install(it)
+                        log.logPrimary("Installing '${it.name}'...")
+
+                        val result = api.install(it)
                         installedPackages.add(it)
+
+                        log.logPrimary("Successfully installed '${it.name}'!")
+                        if (fullLog.value) {
+                            log.logPrimary("Output:")
+                            log.logSecondary(result.stream)
+                        }
                     }
                 }
             }
@@ -94,7 +122,16 @@ class VcpkgModel(vcpkgRoot: File) {
             selectedPackages.clear()
             installedPackages.clear()
             safe(Unit) {
-                installedPackages.addAll(api.list())
+                log.logPrimary("Updating installed packages list...")
+
+                val result = api.list()
+                installedPackages.addAll(result.result)
+
+                log.logPrimary("Updated")
+                if (fullLog.value) {
+                    log.logPrimary("Output:")
+                    log.logSecondary(result.stream)
+                }
             }
         }
     }

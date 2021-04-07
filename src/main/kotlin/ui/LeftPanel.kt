@@ -3,11 +3,10 @@ package ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
+import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,13 +75,13 @@ fun cancelButton(model: VcpkgModel) {
 }
 
 @Composable
-fun refreshButton(model: VcpkgModel) {
+fun updateButton(model: VcpkgModel) {
     Button(
         enabled = !model.isRunning.value,
         onClick = { model.update() },
         modifier = Config.BUTTON_MODIFIER
     ) {
-        Text("Refresh packages list")
+        Text("Update packages list")
     }
 }
 
@@ -102,7 +101,7 @@ fun leftPanel(model: VcpkgModel) {
                 .clip(Config.CORNER_SHAPE)
         ) {
             Column {
-                refreshButton(model)
+                updateButton(model)
                 searchButton(model)
                 installButton(model)
                 removeButton(model)
@@ -124,6 +123,25 @@ fun leftPanel(model: VcpkgModel) {
                 .fillMaxWidth()
                 .background(Config.COLORS.background)
             ) {
+                Row(
+                    modifier = Modifier
+                        .padding(Config.DEFAULT_PADDING)
+                        .fillMaxWidth()
+                        .background(Config.COLORS.background)
+                ) {
+                    RadioButton(
+                        selected = model.fullLog.value,
+                        onClick = { model.fullLog.value = model.fullLog.value xor true },
+                        modifier = Modifier
+                            .padding(Config.DEFAULT_PADDING)
+                    )
+                    Text(
+                        text = "Enable full log",
+                        modifier = Modifier
+                            .padding(Config.DEFAULT_PADDING)
+                    )
+                }
+
                 Box(
                     modifier = Modifier
                     .clip(Config.CORNER_SHAPE)
@@ -134,8 +152,8 @@ fun leftPanel(model: VcpkgModel) {
                     LazyColumn(
                         state = scrollState
                     ) {
-                        items(model.log) {
-                            Text(it.message)
+                        items(model.logContent) {
+                            it.toText()
                         }
                     }
                 }
