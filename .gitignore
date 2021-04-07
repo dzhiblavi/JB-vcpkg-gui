@@ -3,3 +3,4 @@
 build
 test
 gradle
+**/*.DS_Store
