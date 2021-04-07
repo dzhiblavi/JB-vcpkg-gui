@@ -53,6 +53,23 @@ class VcpkgModel(vcpkgRoot: File) {
         }
     }
 
+    private fun updateImpl() {
+        selectedPackages.clear()
+        installedPackages.clear()
+        safe(Unit) {
+            log.logPrimary("Updating installed packages list...")
+
+            val result = api.list()
+            installedPackages.addAll(result.result)
+
+            log.logPrimary("Updated")
+            if (fullLog.value) {
+                log.logPrimary("Output:")
+                log.logSecondary(result.stream)
+            }
+        }
+    }
+
     fun cancel() { cancellation() }
 
     fun remove() {
@@ -75,6 +92,8 @@ class VcpkgModel(vcpkgRoot: File) {
                     }
                 }
             }
+
+            updateImpl()
         }
     }
 
@@ -116,25 +135,14 @@ class VcpkgModel(vcpkgRoot: File) {
                     }
                 }
             }
+
+            updateImpl()
         }
     }
 
     fun update() {
         submit {
-            selectedPackages.clear()
-            installedPackages.clear()
-            safe(Unit) {
-                log.logPrimary("Updating installed packages list...")
-
-                val result = api.list()
-                installedPackages.addAll(result.result)
-
-                log.logPrimary("Updated")
-                if (fullLog.value) {
-                    log.logPrimary("Output:")
-                    log.logSecondary(result.stream)
-                }
-            }
+            updateImpl()
         }
     }
 }

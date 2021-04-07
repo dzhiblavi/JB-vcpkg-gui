@@ -17,7 +17,6 @@ fun String.runCommand(
     val stdout = proc.inputStream.bufferedReader().readText()
 
     if (proc.waitFor(timeoutAmount, timeoutUnit)) {
-        println("Finished: '$this', ${proc.exitValue()}")
         return Pair(proc.exitValue(), stdout)
     } else {
         throw Exception("Failed to execute in limited time: '$this'")

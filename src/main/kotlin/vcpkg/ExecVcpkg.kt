@@ -10,24 +10,29 @@ class ExecVcpkg(
     var vcpkgRoot: File
     ) : Vcpkg {
 
-    private val executable =
+    private var executable : String = ""
+    private var execPrefix : String = ""
+
+    init {
         System.getProperty("os.name").toLowerCase().let {
             when {
                 it.contains("win") -> {
-                    "vcpkg.exe"
+                    executable = "vcpkg.exe"
+                    execPrefix = "${vcpkgRoot}/"
                 }
                 it.contains("nix") || it.contains("nux") || it.contains("aix") -> {
-                    "./vcpkg"
+                    executable = "./vcpkg"
                 }
                 it.contains("mac") -> {
-                    "./vcpkg"
+                    executable = "./vcpkg"
                 }
                 else -> throw Exception("Unsupported OS")
             }
         }
+    }
 
     private fun getExec() : String {
-        return "$vcpkgRoot/$executable"
+        return "$execPrefix$executable"
     }
 
 
