@@ -6,7 +6,10 @@ import util.ExecutionResult
 import util.runCommand
 import java.io.File
 
-class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
+class ExecVcpkg(
+    var vcpkgRoot: File
+    ) : Vcpkg {
+
     private val executable =
         System.getProperty("os.name").toLowerCase().let {
             when {
@@ -23,6 +26,10 @@ class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
             }
         }
 
+    private fun getExec() : String {
+        return "$vcpkgRoot/$executable"
+    }
+
 
     private fun execProc(execLine: String): Pair<Int, String> {
         val result = execLine.runCommand(vcpkgRoot)
@@ -38,7 +45,7 @@ class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
     }
 
     override fun list(): ExecutionResult<List<VcPackage>> {
-        val result = execProc("$executable list")
+        val result = execProc("${getExec()} list")
         val stream = result.second
 
         if (stream.startsWith("No packages"))
@@ -65,7 +72,7 @@ class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
                 0, "", arrayListOf()
             )
 
-        val result = execProc("$executable search $name")
+        val result = execProc("${getExec()} search $name")
         val stream = result.second
         val list = stream.split(System.lineSeparator())
 
@@ -79,7 +86,7 @@ class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
     }
 
     override fun install(pkg: VcPackage) : ExecutionResult<Unit> {
-        val result = execProc("$executable install ${pkg.name}")
+        val result = execProc("${getExec()} install ${pkg.name}")
 
         return ExecutionResult(
             result.first,
@@ -89,7 +96,7 @@ class ExecVcpkg(private val vcpkgRoot: File) : Vcpkg {
     }
 
     override fun remove(pkg: VcPackage) : ExecutionResult<Unit> {
-        val result = execProc("$executable remove ${pkg.name} --recurse")
+        val result = execProc("${getExec()} remove ${pkg.name} --recurse")
 
         return ExecutionResult(
             result.first,

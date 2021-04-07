@@ -55,7 +55,7 @@ fun searchButton(model: VcpkgModel) {
 
         Button(
             enabled = !model.isRunning.value,
-            onClick = { model.search(text) },
+            onClick = { if (text.isNotEmpty()) model.search(text) },
             modifier = Config.BUTTON_MODIFIER.align(Alignment.CenterVertically)
         ) {
             Text("Search")

@@ -29,6 +29,8 @@ class VcpkgModel(vcpkgRoot: File) {
             log.logError(e.message ?: "Unknown error")
             log.logError("Output:")
             log.logSecondary(e.stream)
+        } catch (e: Exception) {
+            log.logError(e.message ?: "Unknown error")
         }
 
         return def
