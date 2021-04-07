@@ -15,6 +15,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import model.VcpkgModel
 import util.Config
+import java.io.File
+
+@Composable
+fun changeRootButton(model: VcpkgModel) {
+    var text by remember { mutableStateOf("") }
+
+    Row {
+        TextField(
+            modifier = Modifier
+                .clip(Config.CORNER_SHAPE)
+                .border(Config.BORDER_STROKE)
+                .padding(Config.DEFAULT_PADDING),
+            value = (if (model.isRunning.value) "" else text),
+            onValueChange = { if (!model.isRunning.value) text = it },
+            singleLine = true
+        )
+
+        Button(
+            enabled = !model.isRunning.value,
+            onClick = { if (text.isNotEmpty()) model.changeRoot(File(text)) },
+            modifier = Config.BUTTON_MODIFIER.align(Alignment.CenterVertically)
+        ) {
+            Text("Set root")
+        }
+    }
+}
 
 @Composable
 fun removeButton(model: VcpkgModel) {
@@ -101,6 +127,7 @@ fun leftPanel(model: VcpkgModel) {
                 .clip(Config.CORNER_SHAPE)
         ) {
             Column {
+                changeRootButton(model)
                 updateButton(model)
                 searchButton(model)
                 installButton(model)

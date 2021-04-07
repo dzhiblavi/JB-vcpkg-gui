@@ -9,7 +9,7 @@ import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class VcpkgModel(vcpkgRoot: File) {
+class VcpkgModel(vcpkgRoot: File = File("")) {
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val log = Log { logContent.add(it) }
     private val api = ExecVcpkg(vcpkgRoot)
@@ -68,6 +68,10 @@ class VcpkgModel(vcpkgRoot: File) {
                 log.logSecondary(result.stream)
             }
         }
+    }
+
+    fun changeRoot(root: File) {
+        api.changeRoot(root)
     }
 
     fun cancel() { cancellation() }

@@ -7,13 +7,12 @@ import util.runCommand
 import java.io.File
 
 class ExecVcpkg(
-    var vcpkgRoot: File
+    private var vcpkgRoot: File
     ) : Vcpkg {
-
     private var executable : String = ""
     private var execPrefix : String = ""
 
-    init {
+    private fun setupVars() {
         System.getProperty("os.name").toLowerCase().let {
             when {
                 it.contains("win") -> {
@@ -31,10 +30,13 @@ class ExecVcpkg(
         }
     }
 
+    init {
+        setupVars()
+    }
+
     private fun getExec() : String {
         return "$execPrefix$executable"
     }
-
 
     private fun execProc(execLine: String): Pair<Int, String> {
         val result = execLine.runCommand(vcpkgRoot)
@@ -49,7 +51,18 @@ class ExecVcpkg(
         return result
     }
 
+    fun checkRoot() {
+        check(vcpkgRoot.toString().isNotEmpty()) { "Vcpkg directory is not provided" }
+    }
+
+    fun changeRoot(root: File) {
+        vcpkgRoot = root
+        setupVars()
+    }
+
     override fun list(): ExecutionResult<List<VcPackage>> {
+        checkRoot()
+
         val result = execProc("${getExec()} list")
         val stream = result.second
 
@@ -77,6 +90,8 @@ class ExecVcpkg(
                 0, "", arrayListOf()
             )
 
+        checkRoot()
+
         val result = execProc("${getExec()} search $name")
         val stream = result.second
         val list = stream.split(System.lineSeparator())
@@ -91,6 +106,7 @@ class ExecVcpkg(
     }
 
     override fun install(pkg: VcPackage) : ExecutionResult<Unit> {
+        checkRoot()
         val result = execProc("${getExec()} install ${pkg.name}")
 
         return ExecutionResult(
@@ -101,6 +117,7 @@ class ExecVcpkg(
     }
 
     override fun remove(pkg: VcPackage) : ExecutionResult<Unit> {
+        checkRoot()
         val result = execProc("${getExec()} remove ${pkg.name} --recurse")
 
         return ExecutionResult(
